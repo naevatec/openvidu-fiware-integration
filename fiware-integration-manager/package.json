@@ -1,0 +1,14 @@
+{
+  "name": "fiware-integration-manager",
+  "version": "0.1.0",
+  "description": "An application to manage the fiware integration api",
+  "main": "index.js",
+  "scripts": {
+    "start": "node_modules/http-server/bin/http-server frontend/ -p 3000"
+  },
+  "author": "Naevatec",
+  "license": "ISC",
+  "dependencies": {
+    "http-server": "^0.11.1"
+  }
+}
