@@ -50,4 +50,17 @@ public class OpenViduConfig {
     public void setSessionMap(Map<String, OpenViduSession> sessionMap) {
         this.sessionMap = sessionMap;
     }
+
+    /**
+     * Returns the session by its name.
+     */
+    public OpenViduSession getSessionByName(String sessionName) {
+        for (OpenViduSession i : sessionMap.values()) {
+            if (i.getSession().getSessionId().equals(sessionName)) {
+                return i;
+            }
+        }
+
+        return null;
+    }
 }

@@ -1,44 +1,60 @@
 package io.openvidu.fiware.integration.models;
 
 import io.openvidu.fiware.integration.controllers.OpenViduWebHookController;
-import io.openvidu.fiware.integration.events.openvidu.OpenViduWebrtcConnectionCreatedEvent;
-import io.openvidu.fiware.integration.events.openvidu.OpenViduWebrtcConnectionDestroyedEvent;
 
+import javax.validation.constraints.Pattern;
 import java.util.StringJoiner;
 
 /**
  * Wrapper for all OpenVidu events that the {@link OpenViduWebHookController} receives.
  */
 public class WebHookEventWrapper {
-    private OpenViduWebrtcConnectionCreatedEvent webrtcConnectionCreated;
-    private OpenViduWebrtcConnectionDestroyedEvent webrtcConnectionDestroyed;
+    private String sessionId;
+    private String participantId;
 
-    public WebHookEventWrapper(OpenViduWebrtcConnectionCreatedEvent webrtcConnectionCreated,
-            OpenViduWebrtcConnectionDestroyedEvent webrtcConnectionDestroyed) {
-        this.webrtcConnectionCreated = webrtcConnectionCreated;
-        this.webrtcConnectionDestroyed = webrtcConnectionDestroyed;
+    @Pattern(regexp = "^(INBOUND|OUTBOUND)$", message = "The connection is incorrect")
+    private String connection;
+    private String event;
+
+    public WebHookEventWrapper() {
     }
 
-    public OpenViduWebrtcConnectionCreatedEvent getWebrtcConnectionCreated() {
-        return webrtcConnectionCreated;
+    public String getSessionId() {
+        return sessionId;
     }
 
-    public void setWebrtcConnectionCreated(OpenViduWebrtcConnectionCreatedEvent webrtcConnectionCreated) {
-        this.webrtcConnectionCreated = webrtcConnectionCreated;
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 
-    public OpenViduWebrtcConnectionDestroyedEvent getWebrtcConnectionDestroyed() {
-        return webrtcConnectionDestroyed;
+    public String getParticipantId() {
+        return participantId;
     }
 
-    public void setWebrtcConnectionDestroyed(OpenViduWebrtcConnectionDestroyedEvent webrtcConnectionDestroyed) {
-        this.webrtcConnectionDestroyed = webrtcConnectionDestroyed;
+    public void setParticipantId(String participantId) {
+        this.participantId = participantId;
+    }
+
+    public String getConnection() {
+        return connection;
+    }
+
+    public void setConnection(String connection) {
+        this.connection = connection;
+    }
+
+    public String getEvent() {
+        return event;
+    }
+
+    public void setEvent(String event) {
+        this.event = event;
     }
 
     @Override
     public String toString() {
         return new StringJoiner(", ", WebHookEventWrapper.class.getSimpleName() + "[", "]")
-                .add("webrtcConnectionCreated=" + webrtcConnectionCreated)
-                .add("webrtcConnectionDestroyed=" + webrtcConnectionDestroyed).toString();
+                .add("sessionId='" + sessionId + "'").add("participantId='" + participantId + "'")
+                .add("connection='" + connection + "'").add("event='" + event + "'").toString();
     }
 }

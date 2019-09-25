@@ -1,16 +1,18 @@
 <template>
     <div class="container">
         <div id="video-container"></div>
-        <div class="form-container">
-            <h1>Webrtc camera <i class="fas fa-video"></i></h1>
-            <div class="inputs">
-                <input type="text" v-model="ovData.cameraUuid" disabled>
-            </div>
-            <div class="errors" v-if="error !== ''">{{ error }}</div>
-            <div class="button">
-                <button @click="removeCamera">Remove camera</button>
-            </div>
-        </div>
+        <q-card>
+            <q-card-section class="title">
+                <h6><i class="fas fa-video"></i> WebRtc camera <i class="fas fa-video"></i></h6>
+            </q-card-section>
+            <q-card-section>
+                <q-input outlined v-model="ovData.cameraUuid" label="Uuid" disabled></q-input>
+                <div class="errors" v-if="error !== ''">{{ error }}</div>
+            </q-card-section>
+            <q-card-actions class="actions">
+                <q-btn color="negative" label="Remove camera" @click="removeCamera"></q-btn>
+            </q-card-actions>
+        </q-card>
     </div>
 </template>
 
@@ -69,8 +71,8 @@
                 });
 
                 publisher.on("videoElementCreated", (event) => {
-                    $("#video-container video").get(0).srcObject = event.element.srcObject;
-                    $(event.element).prop("muted", true); // Mute local video
+                    document.querySelector("#video-container video").srcObject = event.element.srcObject;
+                    event.element.setAttribute("muted", true); // Mute local video
                 });
 
                 this.session.publish(publisher);
@@ -96,65 +98,12 @@
         height: 100%;
     }
 
-    .form-container {
-        min-width: 120px;
-        max-width: 500px;
-        padding: 20px;
-        border: 1px solid #4a4a4a;
-    }
-
-    .form-container > h1 {
-        margin-bottom: 20px;
+    .title {
         text-align: center;
     }
 
-    .form-container > p {
-        font-size: 15px;
-        text-align: justify;
-        margin-bottom: 10px;
-    }
-
-    .form-container > .inputs {
-        margin-bottom: 10px;
-        text-align: center;
-    }
-
-    .form-container > .inputs > input {
-        font-size: 18px;
-        padding: 5px 10px;
-        outline: none;
-        -webkit-appearance: none;
-        border-style: solid;
-        border-radius: 2px;
-        text-align: center;
-    }
-
-    .form-container > .inputs > ::placeholder {
-        color: rgba(192, 192, 192, 0.97);
-        text-align: center;
-    }
-
-    .form-container > .errors {
-        margin-bottom: 10px;
-        text-align: center;
-        color: #ff0000;
-    }
-
-    .form-container > .button {
-        text-align: center;
-    }
-
-    .form-container > .button > button {
-        font-size: 20px;
-        padding: 5px 10px;
-        border-radius: 5px;
-        background-color: #cde6ff;
-        outline: none;
-        -webkit-appearance: none;
-    }
-
-    .form-container > .button > button:active {
-        background-color: #b5cde6;
-        border-style: solid;
+    .actions {
+        display: flex;
+        justify-content: center;
     }
 </style>

@@ -9,11 +9,11 @@ public class ApiPaths {
 
     // Camera
     public static final String Camera = Api + "/camera";
-    public static final String CameraId = "/{cameraUuid}";
+    public static final String CameraId = Camera + "/{cameraUuid}";
     public static final String CameraIdToken = CameraId + "/token";
     public static final String Cameras = Api + "/cameras";
 
     // OpenVidu
-    public static final String OpenVidu = Api + "/ov";
+    private static final String OpenVidu = Api + "/ov";
     public static final String OpenViduWebHook = OpenVidu + "/webhooks";
 }

@@ -7,7 +7,7 @@
     "start": "node_modules/http-server/bin/http-server frontend/ -p 3000"
   },
   "author": "Naevatec",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
     "http-server": "^0.11.1"
   }

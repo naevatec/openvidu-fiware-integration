@@ -1,16 +1,16 @@
 version: '3'
 
 services:
-  #  openvidu-server-kms:
-  #    image: "openvidu/openvidu-server-kms:2.11.0"
-  #    environment:
-  #      - openvidu.webhook=true
-  #      - openvidu.webhook.endpoint=http://localhost:8080/api/v1/ov/webhooks/
-  #      - openvidu.webhook.events=["webrtcConnectionCreated","webrtcConnectionDestroyed"]
-  #      - openvidu.secret=MY_SECRET
-  #      - openvidu.publicurl=https://localhost:4443
-  #    ports:
-  #      - "4443:4443"
+  openvidu-server-kms:
+    image: "openvidu/openvidu-server-kms:2.11.0"
+    environment:
+      - openvidu.webhook=true
+      - openvidu.webhook.endpoint=http://host.docker.internal:8080/api/v1/ov/webhooks
+      - openvidu.webhook.events=["webrtcConnectionCreated","webrtcConnectionDestroyed"]
+      - openvidu.secret=MY_SECRET
+      - openvidu.publicurl=https://localhost:4443
+    ports:
+      - "4443:4443"
 
   fiware-integration-manager:
     image: "node:8"

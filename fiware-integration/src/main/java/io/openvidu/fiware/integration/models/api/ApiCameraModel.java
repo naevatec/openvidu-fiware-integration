@@ -20,20 +20,9 @@ public class ApiCameraModel {
     private String filter;
     private List<String> events;
     private String OVToken;
+    private boolean active;
 
     public ApiCameraModel() {
-    }
-
-    public ApiCameraModel(String cameraUuid,
-            @Pattern(regexp = "^(webrtc|rtsp)$", message = "The protocol is not supported") String protocol,
-            String address, String cameraAddress, String filter, List<String> events, String OVToken) {
-        this.cameraUuid = cameraUuid;
-        this.protocol = protocol;
-        this.address = address;
-        this.cameraAddress = cameraAddress;
-        this.filter = filter;
-        this.events = events;
-        this.OVToken = OVToken;
     }
 
     public String getCameraUuid() {
@@ -92,11 +81,20 @@ public class ApiCameraModel {
         this.OVToken = OVToken;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     @Override
     public String toString() {
         return new StringJoiner(", ", ApiCameraModel.class.getSimpleName() + "[", "]")
                 .add("cameraUuid='" + cameraUuid + "'").add("protocol='" + protocol + "'")
                 .add("address='" + address + "'").add("cameraAddress='" + cameraAddress + "'")
-                .add("filter='" + filter + "'").add("events=" + events).add("OVToken='" + OVToken + "'").toString();
+                .add("filter='" + filter + "'").add("events=" + events).add("OVToken='" + OVToken + "'")
+                .add("active=" + active).toString();
     }
 }

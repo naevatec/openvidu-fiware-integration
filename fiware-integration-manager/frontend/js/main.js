@@ -1,5 +1,5 @@
 // Constants
-var apiPath = window.location + "api/v1";
+var apiPath = "<api path is not loaded>";
 
 // HTTP Methods
 let caller = async function doDelete(url, method, data) {
@@ -55,6 +55,16 @@ async function doDelete(url, data) {
 
 // Main actions.
 (async function () {
+    // Asks for the config JSON
+    let config = await doGet(window.location + "config.json");
+
+    if (!config.isOk) {
+        alert("Error loading the config file");
+        return;
+    }
+
+    apiPath = config.response.apiUrl;
+
     Vue.use(httpVueLoader);
     Vue.use(Vuex);
 

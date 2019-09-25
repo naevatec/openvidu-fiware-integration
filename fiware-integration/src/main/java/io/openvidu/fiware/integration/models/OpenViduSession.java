@@ -1,5 +1,6 @@
 package io.openvidu.fiware.integration.models;
 
+import io.openvidu.fiware.integration.models.api.ApiCameraModel;
 import io.openvidu.java.client.Session;
 
 import java.util.StringJoiner;
@@ -11,13 +12,13 @@ public class OpenViduSession {
     private String name;
     private String publisherToken;
     private Session session;
-    private boolean active;
+    private ApiCameraModel camera;
 
-    public OpenViduSession(String name, String publisherToken, Session session, boolean active) {
+    public OpenViduSession(String name, String publisherToken, Session session, ApiCameraModel camera) {
         this.name = name;
         this.publisherToken = publisherToken;
         this.session = session;
-        this.active = active;
+        this.camera = camera;
     }
 
     public String getName() {
@@ -44,18 +45,18 @@ public class OpenViduSession {
         this.session = session;
     }
 
-    public boolean isActive() {
-        return active;
+    public ApiCameraModel getCamera() {
+        return camera;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setCamera(ApiCameraModel camera) {
+        this.camera = camera;
     }
 
     @Override
     public String toString() {
         return new StringJoiner(", ", OpenViduSession.class.getSimpleName() + "[", "]").add("name='" + name + "'")
-                .add("publisherToken='" + publisherToken + "'").add("session=" + session).add("active=" + active)
+                .add("publisherToken='" + publisherToken + "'").add("session=" + session).add("camera=" + camera)
                 .toString();
     }
 }
