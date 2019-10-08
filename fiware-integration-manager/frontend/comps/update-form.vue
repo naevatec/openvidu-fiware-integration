@@ -17,9 +17,10 @@
             <q-toggle v-model="active"
                       checked-icon="fas fa-check"
                       color="red"
-                      label="Enabled?"
+                      label="Is enabled?"
                       active
-                      unchecked-icon="fas fa-times"></q-toggle>
+                      unchecked-icon="fas fa-times"
+                      disable></q-toggle>
         </q-card-section>
         <q-card-actions class="actions">
             <q-btn color="primary" label="Update" @click="update"></q-btn>
