@@ -88,7 +88,6 @@
                     return;
                 }
 
-                this.refresh();
                 this.$emit("refresh");
             },
             async refresh() {
