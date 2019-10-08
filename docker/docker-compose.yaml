@@ -80,6 +80,7 @@ services:
 
   openvidu-filters-client:
     image: java-app:latest
+    restart: always
     environment:
       - OPENVIDU_URL=https://host.docker.internal:4443/
       - OPENVIDU_SECRET=MY_SECRET
