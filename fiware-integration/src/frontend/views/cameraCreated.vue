@@ -48,7 +48,10 @@
                     return;
                 }
 
-                this.session.connect(this.ovData.ovtoken, {publisher: true})
+                this.session.connect(this.ovData.ovtoken, {
+                    publisher: true,
+                    amITheCamera: "yes-I-am"
+                })
                 .then(() => {
                     this.publisher = this.OV.initPublisher("video-container", {
                         audioSource: undefined, // The source of audio. If undefined default microphone

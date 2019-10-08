@@ -1,12 +1,18 @@
 package io.openvidu.fiware.integration.config;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import io.openvidu.fiware.integration.utils.Consts;
+import io.openvidu.java.client.Connection;
 import io.openvidu.java.client.OpenVidu;
+import io.openvidu.java.client.OpenViduRole;
 import io.openvidu.java.client.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collections;
 import java.util.List;
 
 public class OpenViduConfig {
@@ -67,5 +73,41 @@ public class OpenViduConfig {
 
         List<Session> sessions = openVidu.getActiveSessions();
         return sessions.stream().filter(s -> s.getSessionId().equals(cameraUuid)).findFirst().orElse(null);
+    }
+
+    public Connection getPublisherConnection(String cameraUuid) {
+        // Get session.
+        Session session = getSessionFromCameraId(cameraUuid);
+        if (session == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The session for the camera uuid (" + cameraUuid + ") does not exist");
+        }
+
+        // If any time there's more than one publisher it must be filtered.
+        List<Connection> connections = session.getActiveConnections();
+        Collections.reverse(connections);
+        Connection connection = null;
+
+        JsonParser parser = new JsonParser();
+        for (Connection cn : connections) {
+            String clientData = cn.getClientData();
+            if (cn.getClientData().isEmpty() || cn.getRole() != OpenViduRole.PUBLISHER) {
+                continue;
+            }
+
+            try {
+                JsonObject obj = parser.parse(clientData).getAsJsonObject();
+                String prop = obj.get(Consts.OpenViduPublisherProperty).getAsString();
+
+
+                if (Consts.OpenViduPublisherPropertyValue.equals(prop)) {
+                    connection = cn;
+                    break;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+
+        return connection;
     }
 }

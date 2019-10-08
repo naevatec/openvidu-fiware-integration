@@ -298,31 +298,7 @@ public class CameraService {
     }
 
     private String getPublisherStreamIdFromSession(String cameraUuid) {
-        // Update contents.
-        try {
-            openViduConfig.getOpenVidu().fetch();
-        } catch (Exception e) {
-            log.error("Cannot update OpenVidu", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot update OpenVidu");
-        }
-
-        // Get session.
-        Session session = openViduConfig.getSessionFromCameraId(cameraUuid);
-        if (session == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The session for the camera uuid (" + cameraUuid + ") does not exist");
-        }
-
-        // If any time there's more than one publisher it must be filtered.
-        List<Connection> connections = session.getActiveConnections();
-        Connection connection = null;
-
-        for (Connection cn : connections) {
-            if (cn.getRole() == OpenViduRole.PUBLISHER) {
-                connection = cn;
-                break;
-            }
-        }
+        Connection connection = openViduConfig.getPublisherConnection(cameraUuid);
 
         if (connection == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -333,23 +309,7 @@ public class CameraService {
     }
 
     private String getPublisherParticipantIdFromSession(String cameraUuid) {
-        // Get session.
-        Session session = openViduConfig.getSessionFromCameraId(cameraUuid);
-        if (session == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The session for the camera uuid (" + cameraUuid + ") does not exist");
-        }
-
-        // If any time there's more than one publisher it must be filtered.
-        List<Connection> connections = session.getActiveConnections();
-        Connection connection = null;
-
-        for (Connection cn : connections) {
-            if (cn.getRole() == OpenViduRole.PUBLISHER) {
-                connection = cn;
-                break;
-            }
-        }
+        Connection connection = openViduConfig.getPublisherConnection(cameraUuid);
 
         if (connection == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

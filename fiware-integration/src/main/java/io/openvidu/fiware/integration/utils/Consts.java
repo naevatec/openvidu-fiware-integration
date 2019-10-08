@@ -13,4 +13,9 @@ public class Consts {
     // also change it in src/frontend/views/cameraCreated.vue
     public static final String OpenViduSignal = "switch-state";
     public static final String OpenViduUser = "OPENVIDUAPP";
+
+
+    // also change the two below in src/frontend/views/cameraCreated.vue
+    public static final String OpenViduPublisherProperty = "amITheCamera";
+    public static final String OpenViduPublisherPropertyValue = "yes-I-am";
 }
