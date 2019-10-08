@@ -23,6 +23,7 @@
             return {
                 OV: null,
                 session: null,
+                publisher: null,
                 error: ""
             };
         },
@@ -41,12 +42,52 @@
                 } else {
                     console.error(result);
                 }
+            },
+            publish() {
+                if (this.publisher !== null) {
+                    return;
+                }
+
+                this.session.connect(this.ovData.ovtoken, {publisher: true})
+                .then(() => {
+                    this.publisher = this.OV.initPublisher("video-container", {
+                        audioSource: undefined, // The source of audio. If undefined default microphone
+                        videoSource: undefined, // The source of video. If undefined default webcam
+                        publishAudio: true,  	// Whether you want to start publishing with your audio unmuted or not
+                        publishVideo: true,  	// Whether you want to start publishing with your video enabled or not
+                        resolution: "640x480",  // The resolution of your video
+                        frameRate: 30,			// The frame rate of your video
+                        insertMode: "APPEND",	// How the video is inserted in the target element 'video-container'
+                        mirror: false       	// Whether to mirror your local video or not
+                    });
+
+                    this.publisher.on("videoElementCreated", (event) => {
+                        document.querySelector("#video-container video").srcObject = event.element.srcObject;
+                        event.element.setAttribute("muted", true); // Mute local video
+                    });
+
+                    console.log("publisher", this.publisher);
+
+                    this.session.publish(this.publisher);
+                })
+                .catch(error => {
+                    console.warn("There was an error connecting to the session:", error.code, error.message);
+                });
+            },
+            unpublish() {
+                if (this.publisher === null) {
+                    return;
+                }
+
+                this.session.unpublish(this.publisher);
+                this.publisher = null;
             }
         },
         mounted() {
             window.onbeforeunload = () => {
                 this.session.disconnect();
                 this.session = null;
+                this.publisher = null;
                 this.OV = null;
             };
 
@@ -57,31 +98,17 @@
                 this.session.subscribe(event.stream, "video-container");
             });
 
-            this.session.connect(this.ovData.ovtoken, {publisher: true})
-            .then(() => {
-                const publisher = this.OV.initPublisher("video-container", {
-                    audioSource: undefined, // The source of audio. If undefined default microphone
-                    videoSource: undefined, // The source of video. If undefined default webcam
-                    publishAudio: true,  	// Whether you want to start publishing with your audio unmuted or not
-                    publishVideo: true,  	// Whether you want to start publishing with your video enabled or not
-                    resolution: "640x480",  // The resolution of your video
-                    frameRate: 30,			// The frame rate of your video
-                    insertMode: "APPEND",	// How the video is inserted in the target element 'video-container'
-                    mirror: false       	// Whether to mirror your local video or not
-                });
+            this.session.on("signal:switch-state", (event) => {
+                let value = event === "true";
 
-                publisher.on("videoElementCreated", (event) => {
-                    document.querySelector("#video-container video").srcObject = event.element.srcObject;
-                    event.element.setAttribute("muted", true); // Mute local video
-                });
-
-                console.log("publisher", publisher);
-
-                this.session.publish(publisher);
-            })
-            .catch(error => {
-                console.warn("There was an error connecting to the session:", error.code, error.message);
+                if (value) {
+                    this.publish();
+                } else {
+                    this.unpublish();
+                }
             });
+
+            this.publish();
         },
         beforeDestroy() {
             window.onbeforeunload();

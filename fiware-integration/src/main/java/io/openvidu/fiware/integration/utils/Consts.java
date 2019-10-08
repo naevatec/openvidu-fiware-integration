@@ -10,5 +10,7 @@ public class Consts {
 
     public static final String OpenViduCameraOrionType = "OVCamera";
 
-    public static final String OpenViduSignal = "--switch-state--";
+    // also change it in src/frontend/views/cameraCreated.vue
+    public static final String OpenViduSignal = "switch-state";
+    public static final String OpenViduUser = "OPENVIDUAPP";
 }

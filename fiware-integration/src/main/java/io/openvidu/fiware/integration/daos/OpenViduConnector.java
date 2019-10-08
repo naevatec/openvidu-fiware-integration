@@ -22,12 +22,17 @@ import io.openvidu.fiware.integration.config.OpenViduConfig;
 import io.openvidu.fiware.integration.errors.OpenViduConnectorException;
 import io.openvidu.fiware.integration.models.openvidu.requests.OpenViduFilterRequest;
 import io.openvidu.fiware.integration.models.openvidu.requests.OpenViduSignalRequest;
+import io.openvidu.fiware.integration.utils.Consts;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.fluent.Request;
+import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
@@ -115,7 +120,7 @@ public class OpenViduConnector {
         request.setData(data);
         request.setTo(to);
 
-        sendPostRequest(request, config.getUrl() + SIGNAL_PATH);
+        sendSecuredPostRequest(request, config.getUrl() + SIGNAL_PATH, Consts.OpenViduUser, config.getSecret());
     }
 
     private void sendPostRequest(Object request, String uri) {
@@ -124,6 +129,24 @@ public class OpenViduConnector {
         if (request != null) {
             String jsonEntity = gson.toJson(request);
             req.bodyString(jsonEntity, APPLICATION_JSON).connectTimeout(5000);
+        }
+
+        try {
+            req.execute();
+        } catch (IOException e) {
+            throw new OpenViduConnectorException("Could not execute HTTP request", e);
+        }
+    }
+
+    private void sendSecuredPostRequest(Object request, String uri, String user, String password) {
+        String auth = user + ":" + password;
+        byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.ISO_8859_1));
+        Request req = Request.Post(uri).addHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType())
+                .addHeader(HttpHeaders.AUTHORIZATION, "Basic " + new String(encodedAuth)).socketTimeout(5000);
+
+        if (request != null) {
+            String jsonEntity = gson.toJson(request);
+            req.bodyString(jsonEntity, ContentType.APPLICATION_JSON).connectTimeout(5000);
         }
 
         try {

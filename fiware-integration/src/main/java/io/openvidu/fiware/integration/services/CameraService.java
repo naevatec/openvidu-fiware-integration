@@ -135,6 +135,8 @@ public class CameraService {
 
         cameraPublisher.delete(cameraUuid);
 
+        // TODO send signal to unpublish the camera in the browser.
+
         Session session = openViduConfig.getSessionFromCameraId(cameraUuid);
         if (session != null) {
             try {
@@ -255,7 +257,7 @@ public class CameraService {
             List<String> to = new ArrayList<>();
             to.add(getPublisherParticipantIdFromSession(cameraUuid));
 
-            openViduConnector.sendSignal(cameraUuid, "--internal--", request.getActive().toString(), to);
+            openViduConnector.sendSignal(cameraUuid, Consts.OpenViduSignal, request.getActive().toString(), to);
             camera.setActive(request.getActive());
         }
 
