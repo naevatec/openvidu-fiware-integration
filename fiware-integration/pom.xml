@@ -86,7 +86,7 @@
                 <executions>
                     <execution>
                         <id>build-pre</id>
-                        <phase>prepare-package</phase> <!-- Before the packaging -->
+                        <phase>generate-resources</phase> <!-- Before the packaging -->
                         <goals>
                             <goal>exec</goal>
                         </goals>
