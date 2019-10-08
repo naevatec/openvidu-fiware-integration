@@ -1,0 +1,23 @@
+FROM kurento/kurento-media-server-dev
+
+COPY platedetector.tar.gz /app/platedetector.tar.gz
+
+WORKDIR /app
+
+RUN tar -xvf platedetector.tar.gz
+
+RUN mkdir --parents /usr/local/share/kms-platedetector/tessdata/
+
+RUN mv kmsplatedetector.pc /usr/lib/x86_64-linux-gnu/pkgconfig/
+RUN mv libkmsplatedetectorimpl.so.6.7.1~14.g40724f6 libkmsplatedetectorimpl.so.6 libkmsplatedetectorimpl.so /usr/lib/x86_64-linux-gnu/
+RUN mv libkmsplatedetectormodule.so /usr/lib/x86_64-linux-gnu/kurento/modules/
+RUN mv libplatedetector.so /usr/lib/x86_64-linux-gnu/gstreamer-1.5/
+RUN mv plateLanguage.traineddata /usr/local/share/kms-platedetector/tessdata/
+
+WORKDIR /
+
+RUN apt-get update
+RUN apt-get install --yes libtesseract3
+
+RUN rm -r /app
+

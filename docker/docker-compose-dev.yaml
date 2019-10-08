@@ -2,9 +2,7 @@ version: '3.6'
 
 services:
   kms:
-    build:
-      context: ./
-      dockerfile: Dockerfile.kms.platedetector
+    build: ./
     image: kms-platedetector:latest
     environment:
       - GST_DEBUG="3,Kurento*:4,kms*:4,sdp*:4,webrtc*:4,*rtpendpoint:4,rtp*handler:4,rtpsynchronizer:4,agnosticbin:4"
@@ -58,38 +56,6 @@ services:
     depends_on:
       - orion-mongo
     command: -dbhost mongo
-
-  fiware-integration:
-    build:
-      context: ./
-      dockerfile: Dockerfile.java.app
-    environment:
-      - publicurl=http://localhost:8080
-      - openvidu.publicurl=https://host.docker.internal:4443
-      - openvidu.filterurl=http://host.docker.internal:9090
-      - openvidu.secret=MY_SECRET
-      - orion.publicurl=http://host.docker.internal:1026
-    image: java-app:latest
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./fiware-integration.jar:/app.jar
-    depends_on:
-      - orion
-      - openvidu-server
-
-  openvidu-filters-client:
-    image: java-app:latest
-    environment:
-      - OPENVIDU_URL=https://host.docker.internal:4443/
-      - OPENVIDU_SECRET=MY_SECRET
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./openvidu-filters-client.jar:/app.jar
-    depends_on:
-      - orion
-      - openvidu-server
 
 networks:
   orion-net:
