@@ -1,5 +1,6 @@
 // Constants
-var apiPath = "<api path is not loaded>";
+var orionUrl = "<orion path is not loaded>";
+var apiUrl = "<api path is not loaded>";
 
 // HTTP Methods
 let caller = async function doDelete(url, method, data) {
@@ -8,7 +9,12 @@ let caller = async function doDelete(url, method, data) {
     return new Promise(function (resolve) {
         let request = new XMLHttpRequest();
         request.open(method, url, true);
-        request.setRequestHeader("Content-type", "application/json");
+
+        if (data) {
+            request.setRequestHeader("Content-type", "application/json");
+            request.setRequestHeader("Access-Control-Allow-Origin", "*");
+        }
+
         request.onload = function () {
             Quasar.LoadingBar.stop();
 
@@ -49,8 +55,8 @@ async function doPost(url, data) {
     return caller(url, "POST", data);
 }
 
-async function doDelete(url, data) {
-    return caller(url, "DELETE", data);
+async function doDelete(url) {
+    return caller(url, "DELETE");
 }
 
 // Main actions.
@@ -63,7 +69,7 @@ async function doDelete(url, data) {
         return;
     }
 
-    apiPath = config.response.apiUrl;
+    orionUrl = config.response.orionUrl;
 
     Vue.use(httpVueLoader);
     Vue.use(Vuex);

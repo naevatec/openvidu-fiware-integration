@@ -1,5 +1,5 @@
 <template>
-    <q-card class="main">
+    <q-card>
         <q-card-section>
             <div class="text-h6 text-center"><i class="fas fa-video"></i> Video <i class="fas fa-video"></i>
             </div>
@@ -29,7 +29,7 @@
         methods: {
             async connect() {
                 // Get token
-                const response = await doGet(apiPath + "/camera/" + this.selectedCamera.cameraUuid + "/token");
+                const response = await doGet(apiUrl + "/camera/" + this.selectedCamera.id + "/token");
 
                 if (!response.isOk) {
                     console.error("Cannot get a token", response);

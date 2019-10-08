@@ -5,7 +5,7 @@
             <comp-camera-viewer></comp-camera-viewer>
             <comp-update-form @refresh="refresh"></comp-update-form>
         </div>
-        <!--        <comp-event-logger></comp-event-logger>-->
+        <comp-event-logger v-if="selectedCamera !== null"></comp-event-logger>
     </div>
 </template>
 

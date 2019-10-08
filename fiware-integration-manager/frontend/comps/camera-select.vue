@@ -1,49 +1,95 @@
 <template>
-    <q-card class="main">
-        <q-card-section>
-            <div class="text-h6 text-center"><i class="fas fa-video"></i> Choose the camera you want to manage
-                <i class="fas fa-video"></i></div>
-        </q-card-section>
-        <q-card-section class="button-container">
-            <q-btn :key="key"
-                   :color="amISelected(camera.cameraUuid) ? 'white' : 'secondary'"
-                   :text-color="amISelected(camera.cameraUuid) ? 'black' : 'white'"
-                   v-for="camera, key in cameras"
-                   :label="camera.cameraUuid"
-                   @click="selectCamera(camera)"></q-btn>
-        </q-card-section>
-        <q-card-actions class="actions">
+    <div class="main">
+        <q-table title="Available OpenVidu cameras"
+                 :data="cameras"
+                 :columns="columns"
+                 row-key="name"
+                 selection="single"
+                 :selected.sync="selected"></q-table>
+        <div class="actions">
             <q-btn color="primary" icon="fas fa-sync" label="Refresh" @click="refresh"></q-btn>
-        </q-card-actions>
-    </q-card>
+        </div>
+    </div>
 </template>
 
 <script>
     module.exports = {
         data() {
             return {
-                error: ""
+                error: "",
+                columns: [{
+                    label: "Name",
+                    field: "name",
+                    sortable: true,
+                    align: "left"
+                }, {
+                    label: "Description",
+                    field: "description",
+                    align: "left"
+                }, {
+                    label: "State",
+                    field: "deviceState",
+                    align: "left"
+                }, {
+                    label: "Filter",
+                    field: "filter",
+                    align: "left"
+                }, {
+                    label: "Events",
+                    field: "eventsTxt",
+                    align: "left"
+                }]
             };
         },
         computed: {
-            ...Vuex.mapState(["cameras", "selectedCamera"])
+            ...Vuex.mapState(["cameras", "selectedCamera"]),
+            selected: {
+                get() {
+                    if (this.selectedCamera) {
+                        return [this.selectedCamera];
+                    }
+                    return [];
+                },
+                set(value) {
+                    if (value.length !== 0) {
+                        apiUrl = value[0].ipAddress[1] + "/api/v1";
+                        this.$store.commit("changeSelectedCamera", value[0]);
+                    } else {
+                        apiUrl = "<apiUrl unset>";
+                        this.$store.commit("changeSelectedCamera", null);
+                    }
+                }
+            }
         },
         methods: {
-            amISelected(cameraUuid) {
-                return this.selectedCamera === null || cameraUuid !== this.selectedCamera.cameraUuid;
-            },
-            selectCamera(camera) {
-                this.$store.commit("changeSelectedCamera", camera);
-            },
             async refresh() {
-                let response = await doGet(apiPath + "cameras/");
+                let cameraType = "OVCamera";
+                let response = await doGet(orionUrl + "/v2/entities?type=" + cameraType + "&options=keyValues");
 
                 if (!response.isOk) {
-                    console.log(response);
+                    console.error(response);
                     return;
                 }
 
-                this.$store.commit("changeCameras", response.response);
+                let cameras = response.response;
+                cameras.forEach((it) => {
+                    let filterEvents = getFilterAndEventsFromCamera(it);
+                    let filter = filterEvents.filter;
+                    const events = filterEvents.events;
+
+                    it.filter = filter;
+                    it.events = events;
+                    it.eventsTxt = events.join(", ");
+                });
+
+                this.$store.commit("changeCameras", cameras);
+
+                if (this.selectedCamera) {
+                    let selectedId = this.selectedCamera.id;
+                    this.selected = cameras.filter((cam) => cam.id === selectedId);
+                } else {
+                    this.selected = [];
+                }
             }
         },
         mounted() {
@@ -57,20 +103,9 @@
         margin: auto;
     }
 
-    .button-container {
-        display: grid;
-        grid-column-gap: 10px;
-        grid-row-gap: 10px;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    }
-
-    .button-container > * {
-        margin-bottom: 20px;
-        justify-self: center;
-    }
-
     .actions {
         display: flex;
         justify-content: center;
+        margin-top: 20px;
     }
 </style>
