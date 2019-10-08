@@ -16,6 +16,11 @@ public class WebHookEventWrapper {
     private String connection;
     private String event;
 
+    // For filters
+    private String filterType;
+    private String eventType;
+    private String data;
+
     public WebHookEventWrapper() {
     }
 
@@ -51,10 +56,36 @@ public class WebHookEventWrapper {
         this.event = event;
     }
 
+    public String getFilterType() {
+        return filterType;
+    }
+
+    public void setFilterType(String filterType) {
+        this.filterType = filterType;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public void setData(String data) {
+        this.data = data;
+    }
+
     @Override
     public String toString() {
         return new StringJoiner(", ", WebHookEventWrapper.class.getSimpleName() + "[", "]")
                 .add("sessionId='" + sessionId + "'").add("participantId='" + participantId + "'")
-                .add("connection='" + connection + "'").add("event='" + event + "'").toString();
+                .add("connection='" + connection + "'").add("event='" + event + "'")
+                .add("filterType='" + filterType + "'").add("eventType='" + eventType + "'").add("data='" + data + "'")
+                .toString();
     }
 }

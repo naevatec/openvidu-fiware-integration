@@ -7,6 +7,7 @@
             </q-card-section>
             <q-card-section>
                 <q-input outlined v-model="ovData.cameraUuid" label="Uuid" disabled></q-input>
+                <q-input outlined v-model="ovData.description" label="Description" disabled class="q-mt-md"></q-input>
                 <div class="errors" v-if="error !== ''">{{ error }}</div>
             </q-card-section>
             <q-card-actions class="actions">
@@ -35,11 +36,10 @@
                 let result = await doDelete(apiPath + "/camera/" + this.ovData.cameraUuid, {});
 
                 if (result.isOk) {
-                    console.log("OK", result); // TODO remove
                     this.$store.commit("changeView", "main");
                     this.$store.commit("changeData", null);
                 } else {
-                    console.log("ERROR", result);
+                    console.error(result);
                 }
             }
         },
@@ -74,6 +74,8 @@
                     document.querySelector("#video-container video").srcObject = event.element.srcObject;
                     event.element.setAttribute("muted", true); // Mute local video
                 });
+
+                console.log("publisher", publisher);
 
                 this.session.publish(publisher);
             })

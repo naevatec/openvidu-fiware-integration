@@ -2,6 +2,8 @@ package io.openvidu.fiware.integration.models.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.util.List;
 import java.util.StringJoiner;
@@ -12,15 +14,22 @@ import java.util.StringJoiner;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiCameraModel {
     private String cameraUuid;
+    private String cameraAddress;
 
     @Pattern(regexp = "^(webrtc|rtsp)$", message = "The protocol is not supported")
     private String protocol;
     private String address;
-    private String cameraAddress;
+
+    @NotNull
+    @NotEmpty
     private String filter;
+
+    @NotNull
     private List<String> events;
+    private String description;
     private String OVToken;
     private boolean active;
+    private String creationDate;
 
     public ApiCameraModel() {
     }
@@ -73,6 +82,14 @@ public class ApiCameraModel {
         this.events = events;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public String getOVToken() {
         return OVToken;
     }
@@ -89,12 +106,21 @@ public class ApiCameraModel {
         this.active = active;
     }
 
+    public String getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(String creationDate) {
+        this.creationDate = creationDate;
+    }
+
     @Override
     public String toString() {
         return new StringJoiner(", ", ApiCameraModel.class.getSimpleName() + "[", "]")
                 .add("cameraUuid='" + cameraUuid + "'").add("protocol='" + protocol + "'")
                 .add("address='" + address + "'").add("cameraAddress='" + cameraAddress + "'")
-                .add("filter='" + filter + "'").add("events=" + events).add("OVToken='" + OVToken + "'")
-                .add("active=" + active).toString();
+                .add("filter='" + filter + "'").add("events=" + events).add("description='" + description + "'")
+                .add("OVToken='" + OVToken + "'").add("active=" + active).add("creationDate='" + creationDate + "'")
+                .toString();
     }
 }

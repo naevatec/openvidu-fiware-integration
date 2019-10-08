@@ -1,7 +1,7 @@
 package io.openvidu.fiware.integration.controllers;
 
 import io.openvidu.fiware.integration.models.api.ApiCameraModel;
-import io.openvidu.fiware.integration.models.api.requests.ApiCameraRequest;
+import io.openvidu.fiware.integration.models.api.requests.UpdateCameraRequest;
 import io.openvidu.fiware.integration.services.CameraService;
 import io.openvidu.fiware.integration.utils.ApiPaths;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ public class CameraController {
 
     @PostMapping(ApiPaths.Camera)
     @ResponseStatus(value = HttpStatus.OK)
-    public ApiCameraModel createCamera(@RequestBody ApiCameraRequest request, HttpServletRequest httpServletRequest) {
+    public ApiCameraModel createCamera(@RequestBody ApiCameraModel request, HttpServletRequest httpServletRequest) {
         log.debug("INIT [POST  ] createCamera: " + request);
         if ("".equals(request.getCameraUuid())) {
             request.setCameraUuid(null);
@@ -72,7 +72,7 @@ public class CameraController {
 
     @PostMapping(ApiPaths.CameraId)
     @ResponseStatus(value = HttpStatus.OK)
-    public void updateCamera(@PathVariable("cameraUuid") String cameraUuid, @RequestBody ApiCameraRequest request) {
+    public void updateCamera(@PathVariable("cameraUuid") String cameraUuid, @RequestBody UpdateCameraRequest request) {
         log.debug("INIT [POST  ] updateCamera: " + cameraUuid + ", request: " + request);
 
         cameraService.updateCamera(cameraUuid, request);

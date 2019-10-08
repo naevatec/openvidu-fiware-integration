@@ -1,86 +1,99 @@
+/*
+ * (C) Copyright 2018 Kurento (http://kurento.org/)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package io.openvidu.fiware.integration.models.orion;
 
-import javax.validation.constraints.Pattern;
-import java.util.List;
-import java.util.StringJoiner;
-
 /**
- * Model for a Camera in the API.
+ * Custom Camera data.
  */
-public class OrionCameraModel extends OrionModel {
-    private String cameraUuid;
+public class OrionCameraModel {
 
-    @Pattern(regexp = "^(webrtc)$")
-    private String protocol;
-    private String address;
-    private String filter;
-    private List<String> events;
-    private String OVToken;
+    // here data obtained that can be translated to a "Device Data Model"
+    private String[] controlledAsset;
+    private String creationDate;
+    private String id;
+    private String[] ip;
+    private String Name;
+    private String state; // NEW => CONFIGURED => PROCESSING <=> STOP => DISABLED
+    private String type;
+    private String updateDate;
 
-    public OrionCameraModel(String id, String type, String cameraUuid, @Pattern(regexp = "^(webrtc)$") String protocol,
-            String address, String filter, List<String> events, String OVToken) {
-        super(id, type);
-        this.cameraUuid = cameraUuid;
-        this.protocol = protocol;
-        this.address = address;
-        this.filter = filter;
-        this.events = events;
-        this.OVToken = OVToken;
+    public String[] getControlledAsset() {
+        return controlledAsset;
     }
 
-    public String getCameraUuid() {
-        return cameraUuid;
+    public String getCreationDate() {
+        return creationDate;
     }
 
-    public void setCameraUuid(String cameraUuid) {
-        this.cameraUuid = cameraUuid;
+    public String getId() {
+        return id;
     }
 
-    public String getProtocol() {
-        return protocol;
+    public String[] getIp() {
+        return ip;
     }
 
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
+    public String getName() {
+        return Name;
     }
 
-    public String getAddress() {
-        return address;
+    public String getState() {
+        return state;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public String getType() {
+        return type;
     }
 
-    public String getFilter() {
-        return filter;
+    public String getUpdateDate() {
+        return updateDate;
     }
 
-    public void setFilter(String filter) {
-        this.filter = filter;
+    public void setControlledAsset(String[] strings) {
+        this.controlledAsset = strings;
     }
 
-    public List<String> getEvents() {
-        return events;
+    public void setCreationDate(String creationDate) {
+        this.creationDate = creationDate;
     }
 
-    public void setEvents(List<String> events) {
-        this.events = events;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getOVToken() {
-        return OVToken;
+    public void setIp(String[] strings) {
+        this.ip = strings;
     }
 
-    public void setOVToken(String OVToken) {
-        this.OVToken = OVToken;
+    public void setName(String name) {
+        Name = name;
     }
 
-    @Override
-    public String toString() {
-        return new StringJoiner(", ", OrionCameraModel.class.getSimpleName() + "[", "]")
-                .add("cameraUuid='" + cameraUuid + "'").add("protocol='" + protocol + "'")
-                .add("address='" + address + "'").add("filter='" + filter + "'").add("events=" + events)
-                .add("OVToken='" + OVToken + "'").toString();
+    public void setState(String state) {
+        this.state = state;
     }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setUpdateDate(String updateDate) {
+        this.updateDate = updateDate;
+    }
+
 }

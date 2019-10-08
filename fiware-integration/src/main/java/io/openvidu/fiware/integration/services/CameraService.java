@@ -1,13 +1,15 @@
 package io.openvidu.fiware.integration.services;
 
 import io.openvidu.fiware.integration.config.OpenViduConfig;
-import io.openvidu.fiware.integration.models.OpenViduSession;
+import io.openvidu.fiware.integration.daos.OpenViduConnector;
+import io.openvidu.fiware.integration.daos.publisher.CameraPublisher;
+import io.openvidu.fiware.integration.daos.reader.CameraReader;
+import io.openvidu.fiware.integration.errors.OrionConnectorException;
 import io.openvidu.fiware.integration.models.api.ApiCameraModel;
-import io.openvidu.fiware.integration.models.api.requests.ApiCameraRequest;
+import io.openvidu.fiware.integration.models.api.requests.UpdateCameraRequest;
+import io.openvidu.fiware.integration.utils.Consts;
 import io.openvidu.fiware.integration.utils.Utils;
-import io.openvidu.java.client.OpenViduRole;
-import io.openvidu.java.client.Session;
-import io.openvidu.java.client.TokenOptions;
+import io.openvidu.java.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +19,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -30,13 +30,22 @@ public class CameraService {
     @Autowired
     OpenViduConfig openViduConfig;
 
+    @Autowired
+    OpenViduConnector openViduConnector;
+
+    @Autowired
+    CameraPublisher cameraPublisher;
+
+    @Autowired
+    CameraReader cameraReader;
+
     /**
      * Creates a new camera.
      */
-    public ApiCameraModel createCamera(ApiCameraRequest request) {
-        // Auto-generate the uuid if it is not present.
+    public ApiCameraModel createCamera(ApiCameraModel request) {
         String cameraUuid = request.getCameraUuid();
         if (cameraUuid == null) {
+            // Auto-generate the uuid if it is not present.
             try {
                 MessageDigest salt = MessageDigest.getInstance("SHA-256");
                 salt.update(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
@@ -48,44 +57,42 @@ public class CameraService {
             }
         }
 
-        // The session to connect to.
-        String sessionName;
+        log.debug("Finding the session in Orion by uuid: " + cameraUuid);
+
+        ApiCameraModel camera;
         try {
-            sessionName = Utils.cameraUuidToSession(cameraUuid);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error obtaining the name of the session", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error obtaining the name of the session");
+            camera = cameraReader.readObject(cameraUuid);
+        } catch (OrionConnectorException e) {
+            camera = new ApiCameraModel();
+            camera.setCameraUuid(cameraUuid);
+            camera.setCameraAddress(request.getCameraAddress());
+            camera.setProtocol(request.getProtocol());
+            camera.setCreationDate(Utils.getFormattedCurrentDate());
+            camera.setDescription(request.getDescription());
+            camera.setAddress(Utils.getPublicUrl());
         }
 
-        OpenViduSession session = openViduConfig.getSessionMap().get(sessionName);
-
-        if (session != null && session.getCamera().isActive()) {
+        if (camera.isActive()) {
             // Already created session with an active camera.
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "There is already a camera register by the uuid: " + cameraUuid);
+                    "There is already an active camera register by the uuid: " + cameraUuid);
         }
 
         // Build tokenOptions object with the serverData and the role
         TokenOptions tokenOptions = new TokenOptions.Builder().role(OpenViduRole.PUBLISHER).build();
 
         // Create the session if it does not exist.
+        Session session = openViduConfig.getSessionFromCameraId(cameraUuid);
         if (session == null) {
             try {
-                // Create a new OpenVidu Session.
-                Session ovSession = openViduConfig.getOpenVidu().createSession();
-                String token = ovSession.generateToken(tokenOptions);
+                log.debug("Creating a new OpenVidu session");
 
-                ApiCameraModel model = new ApiCameraModel();
-                model.setCameraUuid(cameraUuid);
-                model.setAddress(openViduConfig.getUrl());
-                model.setCameraAddress(request.getCameraAddress());
-                model.setOVToken(token);
-                model.setProtocol(request.getProtocol());
+                SessionProperties properties = new SessionProperties.Builder().customSessionId(cameraUuid).build();
+                session = openViduConfig.getOpenVidu().createSession(properties);
 
-                session = new OpenViduSession(sessionName, token, ovSession, model); // TODO change active to false.
-                openViduConfig.getSessionMap().put(sessionName, session);
-                // TODO update orion.
+                log.debug("Pushing to Orion: " + camera);
+
+                cameraPublisher.publish(camera);
             } catch (Exception e) {
                 log.error("Error creating a new OpenVidu session", e);
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -93,84 +100,75 @@ public class CameraService {
             }
         }
 
-        return session.getCamera();
+        // Get a publisher token.
+        try {
+            String token = session.generateToken(tokenOptions);
+            camera.setOVToken(token);
+        } catch (OpenViduJavaClientException e) {
+            e.printStackTrace();
+        } catch (OpenViduHttpException e) {
+            log.error("Error creating a new publisher token", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error creating a new publisher token");
+        }
+
+        return camera;
     }
 
     /**
      * Gets a camera.
      */
     public ApiCameraModel getCamera(String cameraUuid) {
-        // The session to connect to.
-        String sessionName;
+        ApiCameraModel camera = null;
         try {
-            sessionName = Utils.cameraUuidToSession(cameraUuid);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error obtaining the name of the session for: " + cameraUuid, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error obtaining the name of the session for: " + cameraUuid);
+            camera = cameraReader.readObject(cameraUuid);
+        } catch (OrionConnectorException ignored) {
         }
 
-        OpenViduSession session = openViduConfig.getSessionMap().get(sessionName);
-
-        if (session == null) {
-            // Undefined session.
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The camera uuid (" + cameraUuid + ") does not exist");
-        }
-
-        return session.getCamera();
+        return camera;
     }
 
     /**
      * Creates a new camera.
      */
     public void deleteCamera(String cameraUuid) {
-        // The session to connect to.
-        String sessionName;
-        try {
-            sessionName = Utils.cameraUuidToSession(cameraUuid);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error obtaining the name of the session for: " + cameraUuid, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error obtaining the name of the session for: " + cameraUuid);
+        log.debug("Removing camera from Orion with uuid: " + cameraUuid);
+
+        cameraPublisher.delete(cameraUuid);
+
+        Session session = openViduConfig.getSessionFromCameraId(cameraUuid);
+        if (session != null) {
+            try {
+                session.close();
+            } catch (OpenViduJavaClientException | OpenViduHttpException e) {
+                log.error("Error removing session: " + session, e);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Error removing session: " + session);
+            }
         }
-
-        OpenViduSession session = openViduConfig.getSessionMap().get(sessionName);
-
-        if (session == null) {
-            // Undefined session.
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The camera uuid (" + cameraUuid + ") does not exist");
-        }
-
-        // TODO update orion.
-        openViduConfig.getSessionMap().remove(sessionName);
     }
 
     /**
      * Gets a new camera token to visualize its video.
      */
     public String getCameraToken(String cameraUuid) {
-        // The session to connect to.
-        String sessionName;
+        // Get camera.
+        ApiCameraModel camera;
         try {
-            sessionName = Utils.cameraUuidToSession(cameraUuid);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error obtaining the name of the session for: " + cameraUuid, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error obtaining the name of the session for: " + cameraUuid);
-        }
-
-        OpenViduSession session = openViduConfig.getSessionMap().get(sessionName);
-
-        if (session == null) {
-            // Undefined session.
+            camera = cameraReader.readObject(cameraUuid);
+        } catch (OrionConnectorException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The camera uuid (" + cameraUuid + ") does not exist");
         }
 
-        if (!session.getCamera().isActive()) {
-            // Already created session with an active camera.
+        // Get session.
+        Session session = openViduConfig.getSessionFromCameraId(cameraUuid);
+        if (session == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The session for the camera uuid (" + cameraUuid + ") does not exist");
+        }
+
+        if (!camera.isActive()) {
+            // The requested camera is inactive.
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The camera is inactive. For uuid: " + cameraUuid);
         }
@@ -178,11 +176,8 @@ public class CameraService {
         // Build tokenOptions object with the serverData and the role
         TokenOptions tokenOptions = new TokenOptions.Builder().role(OpenViduRole.SUBSCRIBER).build();
 
-        // Create a new OpenVidu token.
-        Session ovSession = session.getSession();
-
         try {
-            return ovSession.generateToken(tokenOptions);
+            return session.generateToken(tokenOptions);
         } catch (Exception e) {
             log.error("Error obtaining a new subscriber token for: " + cameraUuid, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -194,44 +189,171 @@ public class CameraService {
     /**
      * Updates the specified camera.
      */
-    public void updateCamera(String cameraUuid, ApiCameraRequest request) {
-        // The session to connect to.
-        String sessionName;
+    public void updateCamera(String cameraUuid, UpdateCameraRequest request) {
+        // Get camera.
+        ApiCameraModel camera;
         try {
-            sessionName = Utils.cameraUuidToSession(cameraUuid);
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error obtaining the name of the session for: " + cameraUuid, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error obtaining the name of the session for: " + cameraUuid);
-        }
-
-        OpenViduSession session = openViduConfig.getSessionMap().get(sessionName);
-
-        if (session == null) {
-            // Undefined session.
+            camera = cameraReader.readObject(cameraUuid);
+        } catch (OrionConnectorException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The camera uuid (" + cameraUuid + ") does not exist");
         }
 
+        if (request.getDescription() != null) {
+            camera.setDescription(request.getDescription());
+        }
 
-        // TODO update OV
-        // TODO update ORION
+        // Update OpenVidu if the filter has changed and is active but only if there are events.
+        if (camera.isActive() && !request.getEvents().isEmpty()) {
+            String publisherStreamId = getPublisherStreamIdFromSession(cameraUuid);
 
-        session.getCamera().setFilter(request.getFilter());
-        session.getCamera().setEvents(request.getEvents());
+            if (!checkFiltersAreEquals(camera.getFilter(), request.getFilter())) {
+                // Remove old events
+                for (String ev : camera.getEvents()) {
+                    openViduConnector.removeEventListener(cameraUuid, publisherStreamId, ev);
+                }
+
+                if (request.getFilter() == null) {
+                    // Remove the filter
+                    openViduConnector.removeFilter(cameraUuid, publisherStreamId);
+                } else {
+                    try {
+                        // Remove the filter
+                        openViduConnector.removeFilter(cameraUuid, publisherStreamId);
+                    } catch (Throwable e) {
+                    }
+                    openViduConnector.applyFilter(cameraUuid, publisherStreamId, request.getFilter());
+
+                    // Add new events
+                    for (String ev : request.getEvents()) {
+                        openViduConnector.addEventListener(cameraUuid, publisherStreamId, ev);
+                    }
+                }
+            } else if (!checkFilterEventsAreEquals(camera.getEvents(), request.getEvents())) {
+                // Remove old events
+                for (String ev : camera.getEvents()) {
+                    openViduConnector.removeEventListener(cameraUuid, publisherStreamId, ev);
+                }
+
+                // Add new events
+                for (String ev : request.getEvents()) {
+                    openViduConnector.addEventListener(cameraUuid, publisherStreamId, ev);
+                }
+            }
+        }
+
+        if (request.getFilter() == null) {
+            camera.setFilter(null);
+            camera.setEvents(new ArrayList<>());
+        } else {
+            camera.setFilter(request.getFilter());
+            camera.setEvents(request.getEvents());
+        }
+
+        // (De)activate the session depending on the value
+        if (request.getActive() != null && request.getActive() != camera.isActive()) {
+            List<String> to = new ArrayList<>();
+            to.add(getPublisherParticipantIdFromSession(cameraUuid));
+
+            openViduConnector.sendSignal(cameraUuid, "--internal--", request.getActive().toString(), to);
+            camera.setActive(request.getActive());
+        }
+
+        log.debug("Updating camera in Orion: " + camera);
+
+        cameraPublisher.update(camera);
     }
 
     /**
      * Gets all available cameras.
      */
     public List<ApiCameraModel> getAllCameras() {
-        Map<String, OpenViduSession> cameras = openViduConfig.getSessionMap();
-        List<ApiCameraModel> results = new ArrayList<>();
+        return cameraReader.readObjectList(Consts.OpenViduCameraOrionType);
+    }
 
-        for (OpenViduSession ovs : cameras.values()) {
-            results.add(ovs.getCamera());
+    private boolean checkFiltersAreEquals(String cameraFilter, String requestFilter) {
+        if (cameraFilter == null) {
+            return requestFilter == null;
         }
 
-        return results;
+        return cameraFilter.equals(requestFilter);
+    }
+
+    private boolean checkFilterEventsAreEquals(List<String> cameraEvents, List<String> requestEvents) {
+        if (cameraEvents.size() != requestEvents.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < cameraEvents.size(); i++) {
+            String cameraEvent = cameraEvents.get(i);
+
+            if (!requestEvents.contains(cameraEvent)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private String getPublisherStreamIdFromSession(String cameraUuid) {
+        // Update contents.
+        try {
+            openViduConfig.getOpenVidu().fetch();
+        } catch (Exception e) {
+            log.error("Cannot update OpenVidu", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot update OpenVidu");
+        }
+
+        // Get session.
+        Session session = openViduConfig.getSessionFromCameraId(cameraUuid);
+        if (session == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The session for the camera uuid (" + cameraUuid + ") does not exist");
+        }
+
+        // If any time there's more than one publisher it must be filtered.
+        List<Connection> connections = session.getActiveConnections();
+        Connection connection = null;
+
+        for (Connection cn : connections) {
+            if (cn.getRole() == OpenViduRole.PUBLISHER) {
+                connection = cn;
+                break;
+            }
+        }
+
+        if (connection == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cannot obtain the publisher for the camera uuid (" + cameraUuid + ")");
+        }
+
+        return connection.getPublishers().get(connection.getPublishers().size() - 1).getStreamId();
+    }
+
+    private String getPublisherParticipantIdFromSession(String cameraUuid) {
+        // Get session.
+        Session session = openViduConfig.getSessionFromCameraId(cameraUuid);
+        if (session == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The session for the camera uuid (" + cameraUuid + ") does not exist");
+        }
+
+        // If any time there's more than one publisher it must be filtered.
+        List<Connection> connections = session.getActiveConnections();
+        Connection connection = null;
+
+        for (Connection cn : connections) {
+            if (cn.getRole() == OpenViduRole.PUBLISHER) {
+                connection = cn;
+                break;
+            }
+        }
+
+        if (connection == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cannot obtain the publisher for the camera uuid (" + cameraUuid + ")");
+        }
+
+        return connection.getConnectionId();
     }
 }

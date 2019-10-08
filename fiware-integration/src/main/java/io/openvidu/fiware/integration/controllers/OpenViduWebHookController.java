@@ -28,6 +28,8 @@ public class OpenViduWebHookController {
             openViduWebHookService.activateSession(event);
         } else if ("webrtcConnectionDestroyed".equals(eventName)) {
             openViduWebHookService.deactivateSession(event);
+        } else if ("filterEventDispatched".equals(eventName)) {
+            openViduWebHookService.saveEvent(event);
         } else {
             log.error("ERROR Unrecognized WebHook " + eventName + " received from OpenVidu: " + event);
         }

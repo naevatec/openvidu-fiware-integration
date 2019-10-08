@@ -1,20 +1,25 @@
 package io.openvidu.fiware.integration.config;
 
-import io.openvidu.fiware.integration.models.OpenViduSession;
 import io.openvidu.java.client.OpenVidu;
+import io.openvidu.java.client.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 public class OpenViduConfig {
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
     private OpenVidu openVidu;
     private String url;
+    private String filterUrl;
     private String secret;
 
-    private Map<String, OpenViduSession> sessionMap = new ConcurrentHashMap<>();
-
-    public OpenViduConfig(String url, String secret) {
+    public OpenViduConfig(String url, String filterUrl, String secret) {
         this.url = url;
+        this.filterUrl = filterUrl;
         this.secret = secret;
         this.openVidu = new OpenVidu(url, secret);
     }
@@ -35,6 +40,14 @@ public class OpenViduConfig {
         this.url = url;
     }
 
+    public String getFilterUrl() {
+        return filterUrl;
+    }
+
+    public void setFilterUrl(String filterUrl) {
+        this.filterUrl = filterUrl;
+    }
+
     public String getSecret() {
         return secret;
     }
@@ -43,24 +56,16 @@ public class OpenViduConfig {
         this.secret = secret;
     }
 
-    public Map<String, OpenViduSession> getSessionMap() {
-        return sessionMap;
-    }
-
-    public void setSessionMap(Map<String, OpenViduSession> sessionMap) {
-        this.sessionMap = sessionMap;
-    }
-
-    /**
-     * Returns the session by its name.
-     */
-    public OpenViduSession getSessionByName(String sessionName) {
-        for (OpenViduSession i : sessionMap.values()) {
-            if (i.getSession().getSessionId().equals(sessionName)) {
-                return i;
-            }
+    public Session getSessionFromCameraId(String cameraUuid) {
+        // Update contents.
+        try {
+            openVidu.fetch();
+        } catch (Exception e) {
+            log.error("Cannot update OpenVidu", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot update OpenVidu");
         }
 
-        return null;
+        List<Session> sessions = openVidu.getActiveSessions();
+        return sessions.stream().filter(s -> s.getSessionId().equals(cameraUuid)).findFirst().orElse(null);
     }
 }

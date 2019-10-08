@@ -1,19 +1,9 @@
 package io.openvidu.fiware.integration.utils;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class Utils {
-    /**
-     * Changes the cameraUuid to get the session name.
-     */
-    public static String cameraUuidToSession(String cameraUuid) throws NoSuchAlgorithmException {
-        MessageDigest salt = MessageDigest.getInstance("SHA-256");
-        salt.update(cameraUuid.getBytes(StandardCharsets.UTF_8));
-        return bytesToHex(salt.digest());
-    }
-
     /**
      * Converts the bytes to an string.
      */
@@ -24,5 +14,33 @@ public class Utils {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Gets the current date in the format:
+     */
+    public static String getFormattedCurrentDate() {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        Date date = new Date(System.currentTimeMillis());
+        return formatter.format(date);
+    }
+
+    /**
+     * Gets the public url of the api server.
+     */
+    public static String getPublicUrl() {
+        return processEnvironmentVariable("publicurl", Consts.DefaultOwnUrl);
+    }
+
+    /**
+     * Gets the specified environment variable and returns it or the default value if it is undefined.
+     */
+    public static String processEnvironmentVariable(String envVarName, String defaultValue) {
+        String value = System.getenv(envVarName);
+        if (value == null) {
+            return defaultValue;
+        }
+
+        return value;
     }
 }

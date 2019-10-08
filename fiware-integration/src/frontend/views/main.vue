@@ -7,6 +7,7 @@
             <q-card-section>
                 <p>Introduce the uuid of your camera or leave it blank to auto generate one.</p>
                 <q-input outlined v-model="uuid" label="Uuid" placeholder="Leave blank to autogenerate it"></q-input>
+                <q-input outlined v-model="description" label="Description" class="q-mt-md"></q-input>
                 <div class="errors" v-if="error !== ''">{{ error }}</div>
             </q-card-section>
             <q-card-actions class="actions">
@@ -23,6 +24,7 @@
         data() {
             return {
                 uuid: "",
+                description: "",
                 error: ""
             };
         },
@@ -39,6 +41,7 @@
 
                 let result = await doPost(apiPath + "/camera", {
                     cameraUuid: data,
+                    description: this.description,
                     protocol: "webrtc"
                 });
 
@@ -46,7 +49,7 @@
                     this.$store.commit("changeView", "cameraCreated");
                     this.$store.commit("changeData", result.response);
                 } else {
-                    console.log("ERROR", result);
+                    console.error(result);
                 }
             },
             validateUuid() {
