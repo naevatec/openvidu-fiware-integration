@@ -8,8 +8,7 @@
             <div id="video-container"></div>
         </q-card-section>
         <q-card-actions class="actions">
-            <q-btn v-if="session === null" color="primary" label="Connect" @click="connect"></q-btn>
-            <q-btn v-else color="primary" label="Disconnect" @click="disconnect"></q-btn>
+            <q-btn v-if="ovData === null" color="primary" label="Connect" @click="connect"></q-btn>
         </q-card-actions>
     </q-card>
 </template>
@@ -20,61 +19,107 @@
             return {
                 OV: null,
                 session: null,
-                token: null
+                publisher: null,
+                token: null,
+                ovData: null
             };
         },
         computed: {
             ...Vuex.mapState(["selectedCamera"])
         },
         methods: {
-            async connect() {
-                // Get token
-                const response = await doGet(apiUrl + "/camera/" + this.selectedCamera.id + "/token");
-
-                if (!response.isOk) {
-                    console.error("Cannot get a token", response);
+            publish() {
+                if (this.publisher !== null) {
                     return;
                 }
 
-                this.token = response.response;
+                console.log("publishing");
 
-                // Connect
-                window.onbeforeunload = () => {
-                    this.session.disconnect();
-                    this.OV = null;
-                    this.session = null;
-                    this.token = null;
-                };
-
-                this.OV = new OpenVidu();
-                this.session = this.OV.initSession();
-
-                this.session.on("streamCreated", (event) => {
-                    this.session.subscribe(event.stream, "video-container");
+                this.publisher = this.OV.initPublisher("video-container", {
+                    audioSource: undefined, // The source of audio. If undefined default microphone
+                    videoSource: undefined, // The source of video. If undefined default webcam
+                    publishAudio: true,  	// Whether you want to start publishing with your audio unmuted or not
+                    publishVideo: true,  	// Whether you want to start publishing with your video enabled or not
+                    resolution: "640x480",  // The resolution of your video
+                    frameRate: 30,			// The frame rate of your video
+                    insertMode: "APPEND",	// How the video is inserted in the target element 'video-container'
+                    mirror: false       	// Whether to mirror your local video or not
                 });
 
-                this.session.connect(this.token, {publisher: false})
-                .catch(error => {
+                this.publisher.on("videoElementCreated", (event) => {
+                    document.querySelector("#video-container video").srcObject = event.element.srcObject;
+                    event.element.setAttribute("muted", true); // Mute local video
+                });
+
+                this.session.publish(this.publisher);
+
+            },
+            unpublish() {
+                if (this.publisher === null) {
+                    return;
+                }
+
+                console.log("unpublishing");
+
+                this.session.unpublish(this.publisher);
+                this.publisher = null;
+            },
+            async connect() {
+                let result = await doPost("http://localhost:8080/api/v1/camera", {
+                    cameraUuid: "test",
+                    description: "This is a description",
+                    protocol: "webrtc"
+                });
+
+                if (result.isOk) {
+                    this.ovData = result.response;
+                } else {
+                    console.error(result);
+                    return;
+                }
+
+                this.session.connect(this.ovData.ovtoken, {
+                    publisher: true,
+                    amITheCamera: "yes-I-am"
+                })
+                .then(() => {
+                    this.publish();
+                }).catch(error => {
                     console.warn("There was an error connecting to the session:", error.code, error.message);
                 });
             },
             async disconnect() {
-                if (this.session != null) {
-                    window.onbeforeunload();
-                    window.onbeforeunload = null;
+                let result = await doDelete("http://localhost:8080/api/v1/camera/" + this.ovData.cameraUuid, {});
+
+                if (result.isOk) {
+                    this.ovData = null;
+                } else {
+                    console.error(result);
                 }
             }
         },
         beforeDestroy() {
             this.disconnect();
         },
-        watch: {
-            selectedCamera() {
-                if (this.session != null) {
-                    this.disconnect();
-                    this.connect();
+        mounted() {
+            this.OV = new OpenVidu();
+            this.session = this.OV.initSession();
+
+            this.session.on("streamCreated", (event) => {
+                this.session.subscribe(event.stream, "video-container");
+            });
+
+            this.session.on("switch-state", (event) => {
+                let value = event.data === "true";
+
+                if (value) {
+                    this.publish();
+                    console.log("a");
+                } else {
+                    this.unpublish();
+                    console.log("v");
                 }
-            }
+            });
         }
     };
 </script>

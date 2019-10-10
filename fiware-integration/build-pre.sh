@@ -1,6 +1,8 @@
 #!/bin/bash
 echo "PRE_BUILD - INIT"
 
+rm -rf ./src/main/resources/static/
+mkdir -p ./src/main/resources/static/
 cp -r ./src/frontend/* ./src/main/resources/static/
 echo "PRE_BUILD - resources copied to resources/static"
 

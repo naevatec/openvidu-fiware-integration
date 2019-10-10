@@ -2,9 +2,9 @@
     <div class="full-size">
         <div class="view">
             <comp-camera-select ref="select"></comp-camera-select>
-            <div v-if="selectedCamera !== null" class="second-row">
+            <div class="second-row">
                 <comp-camera-viewer></comp-camera-viewer>
-                <comp-update-form @refresh="refresh"></comp-update-form>
+                <comp-update-form v-if="selectedCamera !== null" @refresh="refresh"></comp-update-form>
             </div>
             <comp-event-logger v-if="selectedCamera !== null"></comp-event-logger>
         </div>
