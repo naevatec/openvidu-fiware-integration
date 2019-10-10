@@ -69,6 +69,7 @@ services:
       - openvidu.filterurl=http://host.docker.internal:9090
       - openvidu.secret=MY_SECRET
       - orion.publicurl=http://host.docker.internal:1026
+      - develop=true
     image: java-app:latest
     ports:
       - "8080:8080"
